@@ -19,7 +19,6 @@ public class UserController {
     /**
      * [회원가입 API Endpoint]
      * HTTP Method: POST
-     * URL: http://localhost:8080/api/users/signup
      *
      * @param request 프론트엔드에서 JSON 형태로 보낸 회원가입 데이터 (전화번호, 이메일, 비밀번호, 이름 등)
      * @return 200 OK 상태 코드와 함께 저장된 회원 데이터 반환
@@ -27,10 +26,10 @@ public class UserController {
     @PostMapping("/signup")
     public ResponseEntity<UserDto.Response> signUp(@RequestBody UserDto.SignUpRequest request) {
         log.info("[회원 API] 회원가입 요청 - 전화번호(ID): {}, 이름: {}", request.getPhone(), request.getName());
-        
+
         // 서비스 계층의 signUp 메서드를 호출하여 실제 회원가입 처리 수행
         UserDto.Response response = userService.signUp(request);
-        
+
         // HTTP 상태 코드 200(OK)과 함께 결과 JSON 응답
         return ResponseEntity.ok(response);
     }
@@ -38,7 +37,6 @@ public class UserController {
     /**
      * [로그인 API Endpoint]
      * HTTP Method: POST
-     * URL: http://localhost:8080/api/users/login
      *
      * @param request 프론트엔드에서 JSON 형태로 보낸 로그인 데이터 (전화번호, 비밀번호)
      * @return 200 OK 상태 코드와 함께 로그인 성공한 회원 데이터 반환
@@ -46,10 +44,10 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<UserDto.Response> login(@RequestBody UserDto.LoginRequest request) {
         log.info("[회원 API] 로그인 요청 - 전화번호(ID): {}", request.getPhone());
-        
+
         // 서비스 계층의 login 메서드를 호출하여 비밀번호 검증 및 회원이 존재하는지 확인
         UserDto.Response response = userService.login(request);
-        
+
         // HTTP 상태 코드 200(OK)과 함께 로그인된 회원 정보 반환
         return ResponseEntity.ok(response);
     }
