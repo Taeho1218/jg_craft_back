@@ -51,4 +51,18 @@ public class UserController {
         // HTTP 상태 코드 200(OK)과 함께 로그인된 회원 정보 반환
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * [회원 정보 조회 API Endpoint]
+     * HTTP Method: GET
+     * 예매 화면에서 내 정보를 자동으로 불러올 때 사용
+     *
+     * @param id 조회할 회원의 고유 ID (PK)
+     * @return 200 OK 상태 코드와 함께 회원 정보 반환
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDto.Response> getUser(@PathVariable Long id) {
+        log.info("[회원 API] 회원 정보 조회 요청 - 회원ID: {}", id);
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
 }
