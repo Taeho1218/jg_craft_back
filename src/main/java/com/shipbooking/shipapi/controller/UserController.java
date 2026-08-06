@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j // 로깅(로그 출력) 기능을 사용하기 위한 Lombok 어노테이션
 @CrossOrigin(origins = "*") // 프론트엔드(다른 포트/도메인)에서 보내는 CORS 요청을 허용
 @RestController // JSON 형태 데이터를 주고받는 RESTful API 전용 컨트롤러 선언
-@RequestMapping("/api/demo/users") // 이 클래스의 모든 API 경로의 기본 주소 Prefix
+@RequestMapping("/api/users") // 이 클래스의 모든 API 경로의 기본 주소 Prefix
 @RequiredArgsConstructor // final 필드인 userService의 생성자를 자동 생성하여 스프링이 주입(DI)
 public class UserController {
 
@@ -19,7 +19,7 @@ public class UserController {
     /**
      * [회원가입 API Endpoint]
      * HTTP Method: POST
-     * URL: http://localhost:8080/api/demo/users/signup
+     * URL: http://localhost:8080/api/users/signup
      *
      * @param request 프론트엔드에서 JSON 형태로 보낸 회원가입 데이터 (전화번호, 이메일, 비밀번호, 이름 등)
      * @return 200 OK 상태 코드와 함께 저장된 회원 데이터 반환
@@ -38,7 +38,7 @@ public class UserController {
     /**
      * [로그인 API Endpoint]
      * HTTP Method: POST
-     * URL: http://localhost:8080/api/demo/users/login
+     * URL: http://localhost:8080/api/users/login
      *
      * @param request 프론트엔드에서 JSON 형태로 보낸 로그인 데이터 (전화번호, 비밀번호)
      * @return 200 OK 상태 코드와 함께 로그인 성공한 회원 데이터 반환
