@@ -27,21 +27,24 @@ public class ReservationService {
     private final PaymentRepository paymentRepository;
 
     /**
-     * [예매 신청 및 결제 로직]
-     * 1. 운항 일정 확인 및 잔여 좌석 차감
-     * 2. 예약 정보(Reservation) 생성
-     * 3. 승선객 명단(Passenger) 개별 저장 및 승선권 번호 발급
-     * 4. 결제(Payment) 객체 생성 및 연동
+     * [회원 전용 예매 신청 및 결제 로직]
+     * 1. 회원 검증 (회원만 예매 가능)
+     * 2. 운항 일정 확인 및 잔여 좌석 차감
+     * 3. 예약 정보(Reservation) 생성
+     * 4. 승선객 명단(Passenger) 개별 저장 및 승선권 번호 발급
+     * 5. 결제(Payment) 객체 생성 및 연동
      */
     @Transactional
     public ReservationDto.Response createReservation(ReservationDto.CreateRequest request) {
+        if (request.getUserId() == null) {
+            throw new IllegalArgumentException("회원만 예매가 가능합니다. 회원 ID(userId)를 입력해주세요.");
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + request.getUserId()));
+
         Schedule schedule = scheduleRepository.findById(request.getScheduleId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 운항 일정입니다: " + request.getScheduleId()));
-
-        User user = null;
-        if (request.getUserId() != null) {
-            user = userRepository.findById(request.getUserId()).orElse(null);
-        }
 
         // 등급별 요청 수량 집계 및 잔여 좌석 확인/차감
         Map<Long, Integer> requestedSeats = new HashMap<>();
@@ -69,8 +72,8 @@ public class ReservationService {
         Reservation reservation = Reservation.builder()
                 .bookingNumber(bookingNumber)
                 .user(user)
-                .bookerName(request.getBookerName())
-                .bookerPhone(request.getBookerPhone())
+                .bookerName(user.getName())
+                .bookerPhone(user.getPhone())
                 .schedule(schedule)
                 .passengerCount(request.getPassengers().size())
                 .totalPrice(calculatedTotalPrice)
@@ -111,22 +114,10 @@ public class ReservationService {
                 .build();
         paymentRepository.save(payment);
 
-        log.info("[예매 성공] 예약번호: {}, 예약자: {}, 인원: {}명, 총금액: {}원",
-                savedReservation.getBookingNumber(), savedReservation.getBookerName(), savedReservation.getPassengerCount(), savedReservation.getTotalPrice());
+        log.info("[회원 예매 성공] 예약번호: {}, 회원: {}({}), 인원: {}명",
+                savedReservation.getBookingNumber(), user.getName(), user.getPhone(), savedReservation.getPassengerCount());
 
         return convertToDto(savedReservation, savedPassengers);
-    }
-
-    /**
-     * [예약 번호 + 전화번호로 비회원/회원 예약 단건 조회]
-     */
-    @Transactional(readOnly = true)
-    public ReservationDto.Response lookupReservation(String bookingNumber, String bookerPhone) {
-        Reservation reservation = reservationRepository.findByBookingNumberAndBookerPhone(bookingNumber, bookerPhone)
-                .orElseThrow(() -> new IllegalArgumentException("일치하는 예약 정보를 찾을 수 없습니다. (예약번호/연락처 확인)"));
-
-        List<Passenger> passengers = passengerRepository.findByReservationId(reservation.getId());
-        return convertToDto(reservation, passengers);
     }
 
     /**

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 /**
  * [예약/예매 엔티티]
- * 회원 또는 비회원이 특정 운항 일정을 예매한 전체 예약 정보
+ * 회원이 특정 운항 일정을 예매한 예약 정보 (회원 전용)
  */
 @Entity
 @Table(name = "reservations")
@@ -25,14 +25,14 @@ public class Reservation {
     private String bookingNumber; // 예약 번호 (예: BK-20260806-9821)
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user; // 예약자 (회원인 경우 FK, 비회원은 null 가능)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // 예약 회원 (필수)
 
-    @Column(length = 50)
-    private String bookerName; // 예약자 이름 (비회원/회원 공통)
+    @Column(nullable = false, length = 50)
+    private String bookerName; // 예약자 이름
 
-    @Column(length = 20)
-    private String bookerPhone; // 예약자 전화번호 (비회원 조회용)
+    @Column(nullable = false, length = 20)
+    private String bookerPhone; // 예약자 연락처
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id", nullable = false)
@@ -46,7 +46,7 @@ public class Reservation {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ReservationStatus status; // 예약 상태
+    private ReservationStatus status; // 예약 상태 (CONFIRMED, CANCELLED)
 
     @Column(name = "reserved_at", updatable = false)
     private LocalDateTime reservedAt;
