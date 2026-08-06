@@ -31,9 +31,7 @@ public class ScheduleService {
 
         if (date != null && !date.isBlank()) {
             LocalDate searchDate = LocalDate.parse(date);
-            LocalDateTime start = searchDate.atStartOfDay();
-            LocalDateTime end = searchDate.atTime(LocalTime.MAX);
-            schedules = scheduleRepository.findByDeparturePortAndArrivalPortAndDepartureTimeBetween(departurePort, arrivalPort, start, end);
+            schedules = scheduleRepository.findByDeparturePortAndArrivalPortAndSailingDateBetween(departurePort, arrivalPort, searchDate, searchDate);
         } else {
             schedules = scheduleRepository.findByDeparturePortAndArrivalPort(departurePort, arrivalPort);
         }

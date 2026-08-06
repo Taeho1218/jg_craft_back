@@ -90,6 +90,20 @@ public class UserService {
     }
 
     /**
+     * [전화번호(로그인 ID)로 회원 정보 조회]
+     */
+    @Transactional(readOnly = true)
+    public UserDto.Response getUserByPhone(String phone) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 전화번호(ID)입니다: " + phone));
+        if (user.isDeleted()) {
+            throw new IllegalArgumentException("이미 탈퇴한 회원입니다.");
+        }
+        log.info("[회원 정보 조회(전화번호)] 회원ID={}, 전화번호={}, 이름={}", user.getId(), user.getPhone(), user.getName());
+        return convertToResponse(user);
+    }
+
+    /**
      * [비밀번호 검증 기능]
      * 개인정보 수정 전 본인 확인용으로 사용
      * 1. 회원 ID로 DB에서 회원 조회

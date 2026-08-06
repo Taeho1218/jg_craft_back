@@ -72,6 +72,21 @@ public class UserController {
     }
 
     /**
+     * [전화번호(로그인 ID)로 회원 정보 조회 API Endpoint]
+     * HTTP Method: GET
+     * URL: /api/users/phone/{phone}
+     *
+     * @param phone 조회할 회원의 전화번호 (예: 01012345678)
+     * @return 200 OK 상태 코드와 함께 회원 정보 반환
+     */
+    @GetMapping("/phone/{phone}")
+    public ResponseEntity<UserDto.Response> getUserByPhone(@PathVariable String phone) {
+        log.info("[회원 API] 전화번호로 회원 정보 조회 요청 - phone: {}", phone);
+        UserDto.Response response = userService.getUserByPhone(phone);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * [비밀번호 검증 API Endpoint]
      * HTTP Method: POST
      * 개인정보 수정 전 본인 확인용으로 사용
