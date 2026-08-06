@@ -72,6 +72,19 @@ public class UserService {
     }
 
     /**
+     * [회원 정보 조회 기능]
+     * 회원 ID로 DB에서 회원 정보를 조회하여 반환
+     * 예매 화면에서 내 정보를 자동으로 불러올 때 사용
+     */
+    @Transactional(readOnly = true)
+    public UserDto.Response getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + id));
+        log.info("[회원 정보 조회] 회원ID={}, 이름={}", user.getId(), user.getName());
+        return convertToResponse(user);
+    }
+
+    /**
      * [보조 메서드]
      * DB에서 저장/조회된 User 엔티티 데이터를 프론트엔드로 전달할 DTO 객체로 복사/변환
      */
