@@ -108,7 +108,7 @@ public class ReservationService {
         // 결제 정보 생성
         Payment payment = Payment.builder()
                 .reservation(savedReservation)
-                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CARD")
+                .paymentMethod("CARD")
                 .amount(calculatedTotalPrice)
                 .status(Payment.PaymentStatus.COMPLETED)
                 .build();
@@ -145,7 +145,7 @@ public class ReservationService {
 
         reservation.setStatus(Reservation.ReservationStatus.CANCELLED);
 
-        // 승선객 좌석 복구
+        // 1. 승선객 인원수만큼 잔여 좌석 수량 복구 (+1씩 증대)
         List<Passenger> passengers = passengerRepository.findByReservationId(reservation.getId());
         for (Passenger passenger : passengers) {
             ScheduleSeat scheduleSeat = scheduleSeatRepository.findByScheduleIdAndSeatGradeId(
@@ -155,7 +155,12 @@ public class ReservationService {
             }
         }
 
-        log.info("[예약 취소 완료] 예약번호: {}", reservation.getBookingNumber());
+        // 2. 결제 상태를 환불(REFUNDED)로 변경
+        paymentRepository.findByReservationId(reservation.getId()).ifPresent(payment -> {
+            payment.setStatus(Payment.PaymentStatus.REFUNDED);
+        });
+
+        log.info("[예약 취소 및 환불 완료] 예약번호: {}, 복구된 좌석 수: {}석", reservation.getBookingNumber(), passengers.size());
         return convertToDto(reservation, passengers);
     }
 

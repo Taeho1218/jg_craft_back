@@ -16,7 +16,6 @@ public class ReservationDto {
         private Long userId;              // 회원 ID (비회원은 null)
         private String bookerName;        // 예약자 이름
         private String bookerPhone;       // 예약자 연락처
-        private String paymentMethod;     // 결제 수단 (CARD, KAKAO_PAY 등)
         private List<PassengerRequest> passengers; // 승선객 명단 목록
     }
 

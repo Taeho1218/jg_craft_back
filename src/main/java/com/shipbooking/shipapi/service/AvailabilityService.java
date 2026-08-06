@@ -46,8 +46,8 @@ public class AvailabilityService {
         }
 
         List<String> dates = scheduleRepository.findAll().stream()
-                .filter(s -> s.getDeparturePort().equals(departurePort))
-                .filter(s -> s.getArrivalPort().equals(arrivalPort))
+                .filter(s -> matchPort(s.getDeparturePort(), departurePort))
+                .filter(s -> matchPort(s.getArrivalPort(), arrivalPort))
                 .filter(s -> s.getStatus() == Schedule.ScheduleStatus.SCHEDULED)
                 .filter(s -> s.getDepartureTime().isAfter(LocalDateTime.now()))
                 .filter(s -> getTotalAvailableSeats(s.getId()) >= personCount)
@@ -88,8 +88,8 @@ public class AvailabilityService {
         LocalDateTime end = searchDate.atTime(LocalTime.MAX);
 
         List<AvailabilityDto.ShipResponse> ships = scheduleRepository.findAll().stream()
-                .filter(s -> s.getDeparturePort().equals(departurePort))
-                .filter(s -> s.getArrivalPort().equals(arrivalPort))
+                .filter(s -> matchPort(s.getDeparturePort(), departurePort))
+                .filter(s -> matchPort(s.getArrivalPort(), arrivalPort))
                 .filter(s -> s.getStatus() == Schedule.ScheduleStatus.SCHEDULED)
                 .filter(s -> !s.getDepartureTime().isBefore(start) && !s.getDepartureTime().isAfter(end))
                 .filter(s -> getTotalAvailableSeats(s.getId()) >= personCount)
@@ -98,6 +98,14 @@ public class AvailabilityService {
 
         log.info("[예약 가능 선박 조회] 출발항={}, 도착항={}, 날짜={}, 인원={}, 결과 선박 수={}", departurePort, arrivalPort, date, personCount, ships.size());
         return ships;
+    }
+
+    private boolean matchPort(String dbPort, String reqPort) {
+        if (dbPort == null || reqPort == null) return false;
+        if (dbPort.equals(reqPort)) return true;
+        String normDb = dbPort.replaceAll("[()\\s_]", "");
+        String normReq = reqPort.replaceAll("[()\\s_]", "");
+        return normDb.contains(normReq) || normReq.contains(normDb);
     }
 
     /**

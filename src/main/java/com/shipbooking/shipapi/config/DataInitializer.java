@@ -24,11 +24,13 @@ public class DataInitializer implements CommandLineRunner {
     private final ScheduleRepository scheduleRepository;
     private final ScheduleSeatRepository scheduleSeatRepository;
     private final UserRepository userRepository;
+    private final CompanionRepository companionRepository;
 
     @Override
     public void run(String... args) throws Exception {
         if (companyRepository.count() > 0) {
             log.info("[DataInitializer] 초기 데이터가 이미 존재합니다.");
+            seedCompanionsIfEmpty();
             return;
         }
 
@@ -51,45 +53,46 @@ public class DataInitializer implements CommandLineRunner {
         SeatGrade gradeNormal2 = seatGradeRepository.save(SeatGrade.builder().ship(ship2).gradeName("일반실").basePrice(60000).build());
         SeatGrade gradeSuperior2 = seatGradeRepository.save(SeatGrade.builder().ship(ship2).gradeName("우등실").basePrice(66000).build());
 
-        // 4. 운항 일정 생성 (포항 ↔ 울릉도)
+        // 4. 운항 일정 생성 (포항, 묵호, 강릉 ↔ 울릉도 도동/저동/사동)
         LocalDateTime now = LocalDateTime.now();
-        Schedule sched1 = scheduleRepository.save(Schedule.builder()
-                .ship(ship1)
-                .departurePort("포항")
-                .arrivalPort("울릉도(저동)")
-                .departureTime(now.plusDays(2).withHour(9).withMinute(50).withSecond(0))
-                .arrivalTime(now.plusDays(2).withHour(13).withMinute(20).withSecond(0))
-                .status(Schedule.ScheduleStatus.SCHEDULED)
-                .build());
+        int[] dayOffsets = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
 
-        Schedule sched2 = scheduleRepository.save(Schedule.builder()
-                .ship(ship1)
-                .departurePort("울릉도(저동)")
-                .arrivalPort("포항")
-                .departureTime(now.plusDays(4).withHour(14).withMinute(0).withSecond(0))
-                .arrivalTime(now.plusDays(4).withHour(17).withMinute(30).withSecond(0))
-                .status(Schedule.ScheduleStatus.SCHEDULED)
-                .build());
+        for (int offset : dayOffsets) {
+            // 포항 -> 울릉도(저동)
+            Schedule p1 = scheduleRepository.save(Schedule.builder()
+                    .ship(ship1)
+                    .departurePort("포항")
+                    .arrivalPort("울릉도(저동)")
+                    .departureTime(now.plusDays(offset).withHour(9).withMinute(50).withSecond(0))
+                    .arrivalTime(now.plusDays(offset).withHour(13).withMinute(20).withSecond(0))
+                    .status(Schedule.ScheduleStatus.SCHEDULED)
+                    .build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(p1).seatGrade(gradeNormal1).totalSeats(300).availableSeats(280).price(64500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(p1).seatGrade(gradeSuperior1).totalSeats(120).availableSeats(110).price(70700).build());
 
-        Schedule sched3 = scheduleRepository.save(Schedule.builder()
-                .ship(ship2)
-                .departurePort("묵호")
-                .arrivalPort("울릉도(사동)")
-                .departureTime(now.plusDays(2).withHour(8).withMinute(20).withSecond(0))
-                .arrivalTime(now.plusDays(2).withHour(11).withMinute(20).withSecond(0))
-                .status(Schedule.ScheduleStatus.SCHEDULED)
-                .build());
+            // 묵호 -> 울릉도(도동)
+            Schedule m1 = scheduleRepository.save(Schedule.builder()
+                    .ship(ship2)
+                    .departurePort("묵호")
+                    .arrivalPort("울릉도(도동)")
+                    .departureTime(now.plusDays(offset).withHour(8).withMinute(20).withSecond(0))
+                    .arrivalTime(now.plusDays(offset).withHour(11).withMinute(20).withSecond(0))
+                    .status(Schedule.ScheduleStatus.SCHEDULED)
+                    .build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m1).seatGrade(gradeNormal2).totalSeats(250).availableSeats(240).price(60000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m1).seatGrade(gradeSuperior2).totalSeats(100).availableSeats(90).price(66000).build());
 
-        // 5. 운항별 좌석 재고 및 가격 설정 (ScheduleSeat)
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched1).seatGrade(gradeNormal1).totalSeats(300).availableSeats(280).price(64500).build());
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched1).seatGrade(gradeSuperior1).totalSeats(120).availableSeats(110).price(70700).build());
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched1).seatGrade(gradeVip1).totalSeats(20).availableSeats(18).price(120000).build());
-
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched2).seatGrade(gradeNormal1).totalSeats(300).availableSeats(295).price(64500).build());
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched2).seatGrade(gradeSuperior1).totalSeats(120).availableSeats(115).price(70700).build());
-
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched3).seatGrade(gradeNormal2).totalSeats(250).availableSeats(240).price(60000).build());
-        scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sched3).seatGrade(gradeSuperior2).totalSeats(100).availableSeats(90).price(66000).build());
+            // 묵호 -> 울릉도(사동)
+            Schedule m2 = scheduleRepository.save(Schedule.builder()
+                    .ship(ship2)
+                    .departurePort("묵호")
+                    .arrivalPort("울릉도(사동)")
+                    .departureTime(now.plusDays(offset).withHour(12).withMinute(40).withSecond(0))
+                    .arrivalTime(now.plusDays(offset).withHour(15).withMinute(40).withSecond(0))
+                    .status(Schedule.ScheduleStatus.SCHEDULED)
+                    .build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m2).seatGrade(gradeNormal2).totalSeats(250).availableSeats(230).price(60000).build());
+        }
 
         // 6. 관리자 계정 생성 (전화번호: 01000000000, 비번: admin123)
         if (!userRepository.existsByPhone("01000000000")) {
@@ -102,6 +105,44 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        log.info("[DataInitializer] 샘플 데이터 시딩 완료! (선사 2개, 선박 2개, 운항일정 3개, 관리자 계정 생성됨)");
+        seedCompanionsIfEmpty();
+
+        log.info("[DataInitializer] 샘플 데이터 시딩 완료!");
+    }
+
+    private void seedCompanionsIfEmpty() {
+        if (companionRepository.count() == 0) {
+            companionRepository.save(Companion.builder()
+                    .memberId(3L)
+                    .companionName("김철수")
+                    .birthDate(java.time.LocalDate.of(1998, 5, 20))
+                    .gender(Companion.Gender.MALE)
+                    .nationality("대한민국")
+                    .phoneNumber("010-1234-5678")
+                    .emergencyContact("010-9876-5432")
+                    .build());
+
+            companionRepository.save(Companion.builder()
+                    .memberId(3L)
+                    .companionName("박영희")
+                    .birthDate(java.time.LocalDate.of(2000, 11, 3))
+                    .gender(Companion.Gender.FEMALE)
+                    .nationality("대한민국")
+                    .phoneNumber("010-1111-2222")
+                    .emergencyContact("010-3333-4444")
+                    .build());
+
+            companionRepository.save(Companion.builder()
+                    .memberId(5L)
+                    .companionName("John Smith")
+                    .birthDate(java.time.LocalDate.of(1995, 8, 10))
+                    .gender(Companion.Gender.MALE)
+                    .nationality("USA")
+                    .phoneNumber("+1-555-1234")
+                    .emergencyContact("+1-555-9999")
+                    .build());
+
+            log.info("[DataInitializer] 샘플 동행자 데이터 3건 생성 완료!");
+        }
     }
 }
