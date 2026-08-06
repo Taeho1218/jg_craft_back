@@ -70,4 +70,69 @@ public class UserController {
         // HTTP 상태 코드 200(OK)과 함께 회원 정보 반환
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * [비밀번호 검증 API Endpoint]
+     * HTTP Method: POST
+     * 개인정보 수정 전 본인 확인용으로 사용
+     *
+     * @param id      검증할 회원의 고유 ID (PK)
+     * @param request 검증할 비밀번호
+     * @return 200 OK (일치) / 예외 발생 (불일치)
+     */
+    @PostMapping("/{id}/verify-password")
+    public ResponseEntity<Void> verifyPassword(
+            @PathVariable Long id,
+            @RequestBody UserDto.VerifyPasswordRequest request) {
+        log.info("[회원 API] 비밀번호 검증 요청 - 회원ID: {}", id);
+
+        // 서비스 계층의 verifyPassword 메서드를 호출하여 비밀번호 일치 여부 검증
+        userService.verifyPassword(id, request.getPassword());
+
+        // 비밀번호 일치 시 HTTP 상태 코드 200(OK) 반환 (응답 body 없음)
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * [회원 탈퇴 API Endpoint]
+     * HTTP Method: DELETE
+     * 비밀번호 검증(POST /{id}/verify-password) 후 호출
+     * 실제 삭제 없이 탈퇴 상태로만 변경 (소프트 딜리트)
+     *
+     * @param id 탈퇴할 회원의 고유 ID (PK)
+     * @return 200 OK (응답 body 없음)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        log.info("[회원 API] 회원 탈퇴 요청 - 회원ID: {}", id);
+
+        // 서비스 계층의 deleteUser 메서드를 호출하여 탈퇴 처리 (deleted = true)
+        userService.deleteUser(id);
+
+        // HTTP 상태 코드 200(OK) 반환 (응답 body 없음)
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * [개인정보 수정 API Endpoint]
+     * HTTP Method: PATCH
+     * 비밀번호 검증 후 개인정보 수정 시 사용
+     * 필수: 휴대폰 번호, 이름, 생년월일 / 선택: 나머지 항목
+     *
+     * @param id      수정할 회원의 고유 ID (PK)
+     * @param request 수정할 회원 정보
+     * @return 200 OK 상태 코드와 함께 수정된 회원 정보 반환
+     */
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserDto.Response> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserDto.UpdateRequest request) {
+        log.info("[회원 API] 개인정보 수정 요청 - 회원ID: {}", id);
+
+        // 서비스 계층의 updateUser 메서드를 호출하여 회원 정보 수정 처리
+        UserDto.Response response = userService.updateUser(id, request);
+
+        // HTTP 상태 코드 200(OK)과 함께 수정된 회원 정보 반환
+        return ResponseEntity.ok(response);
+    }
 }

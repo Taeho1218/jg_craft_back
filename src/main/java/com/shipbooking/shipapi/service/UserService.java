@@ -61,12 +61,17 @@ public class UserService {
         User user = userRepository.findByPhone(request.getPhone())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 전화번호(ID)입니다: " + request.getPhone()));
 
-        // [2단계: 비밀번호 일치 여부 검증]
+        // [2단계: 탈퇴 여부 확인]
+        if (user.isDeleted()) {
+            throw new IllegalArgumentException("이미 탈퇴한 회원입니다.");
+        }
+
+        // [3단계: 비밀번호 일치 여부 검증]
         if (!user.getPassword().equals(request.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // [3단계: 로그인 성공 로그 출력 및 결과 반환]
+        // [4단계: 로그인 성공 로그 출력 및 결과 반환]
         log.info("[로그인 성공] 전화번호(ID)={}, 이름={}", user.getPhone(), user.getName());
         return convertToResponse(user);
     }
@@ -82,6 +87,100 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + id));
         log.info("[회원 정보 조회] 회원ID={}, 이름={}", user.getId(), user.getName());
         return convertToResponse(user);
+    }
+
+    /**
+     * [비밀번호 검증 기능]
+     * 개인정보 수정 전 본인 확인용으로 사용
+     * 1. 회원 ID로 DB에서 회원 조회
+     * 2. 입력한 비밀번호와 DB의 비밀번호 비교
+     * 3. 불일치 시 예외 발생
+     */
+    @Transactional(readOnly = true)
+    public void verifyPassword(Long id, String password) {
+        // [1단계: 회원 조회] 존재하지 않는 회원이면 예외 발생
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + id));
+
+        // [2단계: 비밀번호 검증] 불일치 시 예외 발생
+        if (!user.getPassword().equals(password)) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        log.info("[비밀번호 검증 성공] 회원ID={}", id);
+    }
+
+    /**
+     * [개인정보 수정 기능]
+     * 1. 필수값(휴대폰 번호, 이름, 생년월일) 검증
+     * 2. 회원 조회
+     * 3. 전화번호 변경 시 중복 검사
+     * 4. 회원 정보 수정 (비밀번호는 입력된 경우에만 변경)
+     * 5. 수정된 결과를 응답 데이터로 변환 후 반환
+     */
+    @Transactional
+    public UserDto.Response updateUser(Long id, UserDto.UpdateRequest request) {
+        // [1단계: 필수값 검증]
+        if (request.getPhone() == null || request.getPhone().isBlank()) {
+            throw new IllegalArgumentException("휴대폰 번호는 필수입니다.");
+        }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
+        }
+        if (request.getBirthDate() == null || request.getBirthDate().isBlank()) {
+            throw new IllegalArgumentException("생년월일은 필수입니다.");
+        }
+
+        // [2단계: 회원 조회]
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + id));
+
+        // [3단계: 전화번호 변경 시 중복 검사] 기존 번호와 다른 경우에만 확인
+        if (!user.getPhone().equals(request.getPhone()) && userRepository.existsByPhone(request.getPhone())) {
+            throw new IllegalArgumentException("이미 등록된 전화번호입니다: " + request.getPhone());
+        }
+
+        // [4단계: 회원 정보 수정]
+        user.setPhone(request.getPhone());
+        user.setName(request.getName());
+        user.setBirthDate(request.getBirthDate());
+        user.setGender(request.getGender());
+        user.setNationality(request.getNationality());
+        user.setEmail(request.getEmail());
+        user.setEmergencyPhone(request.getEmergencyPhone());
+
+        // 비밀번호는 값이 입력된 경우에만 변경 (비어있으면 기존 비밀번호 유지)
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(request.getPassword());
+        }
+
+        log.info("[개인정보 수정 완료] 회원ID={}, 이름={}", user.getId(), user.getName());
+
+        // [5단계: 수정된 정보를 응답 DTO로 변환하여 반환]
+        return convertToResponse(user);
+    }
+
+    /**
+     * [회원 탈퇴 기능]
+     * 실제 DB에서 삭제하지 않고 deleted 플래그를 true로 변경하는 소프트 딜리트 방식
+     * - 예약 이력 등 연관 데이터를 보존하기 위해 논리적 삭제 처리
+     * - 탈퇴 이후 해당 계정으로 로그인 시도 시 예외 발생
+     */
+    @Transactional
+    public void deleteUser(Long id) {
+        // [1단계: 회원 조회] 존재하지 않는 회원이면 예외 발생
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + id));
+
+        // [2단계: 이미 탈퇴한 회원인지 확인]
+        if (user.isDeleted()) {
+            throw new IllegalArgumentException("이미 탈퇴한 회원입니다.");
+        }
+
+        // [3단계: 탈퇴 처리] deleted 플래그를 true로 변경 (JPA 변경 감지로 자동 UPDATE)
+        user.setDeleted(true);
+
+        log.info("[회원 탈퇴 완료] 회원ID={}, 이름={}", user.getId(), user.getName());
     }
 
     /**
