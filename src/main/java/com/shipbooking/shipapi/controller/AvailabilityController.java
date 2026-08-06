@@ -33,7 +33,12 @@ public class AvailabilityController {
             @RequestParam String arrivalPort,
             @RequestParam int personCount) {
         log.info("[가용성 API] 예약 가능 날짜 조회 - 출발항={}, 도착항={}, 인원={}", departurePort, arrivalPort, personCount);
-        return ResponseEntity.ok(availabilityService.getAvailableDates(departurePort, arrivalPort, personCount));
+
+        // 서비스 계층의 getAvailableDates 메서드를 호출하여 예약 가능한 날짜 목록 조회
+        List<String> response = availabilityService.getAvailableDates(departurePort, arrivalPort, personCount);
+
+        // HTTP 상태 코드 200(OK)과 함께 날짜 목록 반환
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -53,6 +58,11 @@ public class AvailabilityController {
             @RequestParam String date,
             @RequestParam int personCount) {
         log.info("[가용성 API] 예약 가능 선박 조회 - 출발항={}, 도착항={}, 날짜={}, 인원={}", departurePort, arrivalPort, date, personCount);
-        return ResponseEntity.ok(availabilityService.getAvailableShips(departurePort, arrivalPort, personCount, date));
+
+        // 서비스 계층의 getAvailableShips 메서드를 호출하여 예약 가능한 선박 및 좌석 정보 조회
+        List<AvailabilityDto.ShipResponse> response = availabilityService.getAvailableShips(departurePort, arrivalPort, personCount, date);
+
+        // HTTP 상태 코드 200(OK)과 함께 선박 목록 반환
+        return ResponseEntity.ok(response);
     }
 }

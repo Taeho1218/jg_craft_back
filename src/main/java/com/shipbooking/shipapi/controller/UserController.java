@@ -63,6 +63,11 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDto.Response> getUser(@PathVariable Long id) {
         log.info("[회원 API] 회원 정보 조회 요청 - 회원ID: {}", id);
-        return ResponseEntity.ok(userService.getUserById(id));
+
+        // 서비스 계층의 getUserById 메서드를 호출하여 회원 정보 조회
+        UserDto.Response response = userService.getUserById(id);
+
+        // HTTP 상태 코드 200(OK)과 함께 회원 정보 반환
+        return ResponseEntity.ok(response);
     }
 }
