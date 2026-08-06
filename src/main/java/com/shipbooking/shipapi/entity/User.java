@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * [사용자/회원 엔티티]
+ * 회원 정보 및 권한 (USER / ADMIN)
+ */
 @Entity
 @Table(name = "users")
 @Getter
@@ -20,10 +24,10 @@ public class User {
     @Column(nullable = false, unique = true, length = 20)
     private String phone; // 회원 로그인 ID (전화번호)
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String email;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String password;
 
     @Column(nullable = false, length = 50)
@@ -41,11 +45,24 @@ public class User {
     @Column(length = 10)
     private String birthDate; // 생년월일 (YYYY-MM-DD)
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Role role = Role.USER; // 권한 (USER: 일반회원, ADMIN: 관리자)
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
+    }
+
+    public enum Role {
+        USER,  // 일반 고객
+        ADMIN  // 관리자 (배표 재고/운항/명단 관리)
     }
 }
