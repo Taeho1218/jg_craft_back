@@ -50,6 +50,10 @@ public class User {
     @Builder.Default
     private Role role = Role.USER; // 권한 (USER: 일반회원, ADMIN: 관리자)
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false; // 탈퇴 여부 (true: 탈퇴 처리됨)
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
