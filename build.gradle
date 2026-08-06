@@ -14,7 +14,7 @@ java {
 }
 
 springBoot {
-    mainClass = 'com.shipbooking.shipapi.ShipApiApplication'
+    mainClass = 'com.shipbooking.ShipApiApplication'
 }
 
 configurations {
