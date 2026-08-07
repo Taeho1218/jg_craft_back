@@ -67,9 +67,12 @@ public class UserService {
         String noHyphenPhone = cleanPhone.replaceAll("-", "");
 
         User user = userRepository.findByPhone(cleanPhone)
+                .or(() -> userRepository.findByLoginId(cleanPhone))
                 .or(() -> userRepository.findByPhone(noHyphenPhone))
+                .or(() -> userRepository.findByLoginId(noHyphenPhone))
                 .or(() -> userRepository.findAll().stream()
-                        .filter(u -> u.getPhone() != null && u.getPhone().replaceAll("-", "").equals(noHyphenPhone))
+                        .filter(u -> (u.getPhone() != null && u.getPhone().replaceAll("-", "").equals(noHyphenPhone)) ||
+                                     (u.getLoginId() != null && u.getLoginId().replaceAll("-", "").equals(noHyphenPhone)))
                         .findFirst())
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 아이디(휴대폰번호)입니다: " + request.getPhone()));
 
@@ -81,7 +84,7 @@ public class UserService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        log.info("[로그인 성공] 전화번호(ID)={}, 이름={}", user.getPhone(), user.getName());
+        log.info("[로그인 성공] ID/전화번호={}, 이름={}", request.getPhone(), user.getName());
         return convertToResponse(user);
     }
 
