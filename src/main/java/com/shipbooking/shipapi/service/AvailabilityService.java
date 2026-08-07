@@ -102,9 +102,24 @@ public class AvailabilityService {
 
     private boolean matchPort(String dbPort, String reqPort) {
         if (dbPort == null || reqPort == null) return false;
-        if (dbPort.equals(reqPort)) return true;
-        String normDb = dbPort.replaceAll("[()\\s_]", "");
-        String normReq = reqPort.replaceAll("[()\\s_]", "");
+        String cleanDb = dbPort.trim();
+        String cleanReq = reqPort.trim();
+
+        if (cleanDb.equalsIgnoreCase(cleanReq)) return true;
+
+        // 항구명에 '울릉', '도동', '저동', '사동'이 포함되어 있으면 울릉도 항구 상호 매칭
+        boolean isDbUlleung = cleanDb.contains("도동") || cleanDb.contains("저동") || cleanDb.contains("사동") || cleanDb.contains("울릉");
+        boolean isReqUlleung = cleanReq.contains("도동") || cleanReq.contains("저동") || cleanReq.contains("사동") || cleanReq.contains("울릉");
+        if (isDbUlleung && isReqUlleung) {
+            return true;
+        }
+
+        if (cleanDb.contains("묵호") && cleanReq.contains("묵호")) return true;
+        if (cleanDb.contains("포항") && cleanReq.contains("포항")) return true;
+        if (cleanDb.contains("독도") && cleanReq.contains("독도")) return true;
+
+        String normDb = cleanDb.replaceAll("[()\\s_항]", "");
+        String normReq = cleanReq.replaceAll("[()\\s_항]", "");
         return normDb.contains(normReq) || normReq.contains(normDb);
     }
 
