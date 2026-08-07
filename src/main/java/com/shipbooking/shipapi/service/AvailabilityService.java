@@ -3,8 +3,10 @@ package com.shipbooking.shipapi.service;
 import com.shipbooking.shipapi.dto.AvailabilityDto;
 import com.shipbooking.shipapi.entity.Schedule;
 import com.shipbooking.shipapi.entity.ScheduleSeat;
+import com.shipbooking.shipapi.entity.SeatGrade;
 import com.shipbooking.shipapi.repository.ScheduleRepository;
 import com.shipbooking.shipapi.repository.ScheduleSeatRepository;
+import com.shipbooking.shipapi.repository.SeatGradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class AvailabilityService {
 
     private final ScheduleRepository scheduleRepository;
     private final ScheduleSeatRepository scheduleSeatRepository;
+    private final SeatGradeRepository seatGradeRepository;
 
     /**
      * [예약 가능 날짜 조회]
@@ -148,28 +151,46 @@ public class AvailabilityService {
         int totalAvailableSeats;
 
         if (seats.isEmpty()) {
-            AvailabilityDto.SeatInfo defaultNormal = AvailabilityDto.SeatInfo.builder()
-                    .seatGradeId(1L)
-                    .gradeName("일반석")
-                    .price(65000)
-                    .availableSeats(200)
-                    .totalSeats(300)
-                    .build();
-            AvailabilityDto.SeatInfo defaultVip = AvailabilityDto.SeatInfo.builder()
-                    .seatGradeId(2L)
-                    .gradeName("우등석")
-                    .price(85000)
-                    .availableSeats(50)
-                    .totalSeats(100)
-                    .build();
-            seatInfos = List.of(defaultNormal, defaultVip);
-            totalAvailableSeats = 250;
+            Long shipId = (schedule.getShip() != null) ? schedule.getShip().getId() : 1L;
+            List<SeatGrade> dbSeatGrades = seatGradeRepository.findByShipId(shipId);
+
+            if (!dbSeatGrades.isEmpty()) {
+                seatInfos = dbSeatGrades.stream().map(grade -> {
+                    int price = (grade.getBasePrice() != null) ? grade.getBasePrice() : getDefaultPrice(grade.getGradeName());
+                    int capacity = (grade.getSeatCapacity() != null) ? grade.getSeatCapacity() : 100;
+                    return AvailabilityDto.SeatInfo.builder()
+                            .seatGradeId(grade.getId())
+                            .gradeName(grade.getGradeName())
+                            .price(price)
+                            .availableSeats(capacity)
+                            .totalSeats(capacity)
+                            .build();
+                }).collect(Collectors.toList());
+                totalAvailableSeats = seatInfos.stream().mapToInt(AvailabilityDto.SeatInfo::getAvailableSeats).sum();
+            } else {
+                AvailabilityDto.SeatInfo defaultNormal = AvailabilityDto.SeatInfo.builder()
+                        .seatGradeId(1L)
+                        .gradeName("일반석")
+                        .price(65000)
+                        .availableSeats(200)
+                        .totalSeats(300)
+                        .build();
+                AvailabilityDto.SeatInfo defaultVip = AvailabilityDto.SeatInfo.builder()
+                        .seatGradeId(2L)
+                        .gradeName("우등석")
+                        .price(85000)
+                        .availableSeats(50)
+                        .totalSeats(100)
+                        .build();
+                seatInfos = List.of(defaultNormal, defaultVip);
+                totalAvailableSeats = 250;
+            }
         } else {
             seatInfos = seats.stream()
                     .map(seat -> AvailabilityDto.SeatInfo.builder()
                             .seatGradeId(seat.getSeatGrade() != null ? seat.getSeatGrade().getId() : 1L)
                             .gradeName(seat.getSeatGrade() != null ? seat.getSeatGrade().getGradeName() : "일반석")
-                            .price(seat.getPrice())
+                            .price(seat.getPrice() != null ? seat.getPrice() : getDefaultPrice(seat.getSeatGrade() != null ? seat.getSeatGrade().getGradeName() : ""))
                             .availableSeats(seat.getAvailableSeats())
                             .totalSeats(seat.getTotalSeats())
                             .build())
@@ -195,5 +216,16 @@ public class AvailabilityService {
                 .totalAvailableSeats(totalAvailableSeats)
                 .seats(seatInfos)
                 .build();
+    }
+
+    private int getDefaultPrice(String gradeName) {
+        if (gradeName == null) return 65000;
+        if (gradeName.contains("1층")) return 65500;
+        if (gradeName.contains("2층")) return 82500;
+        if (gradeName.contains("이코노미")) return 81000;
+        if (gradeName.contains("비즈니스")) return 121500;
+        if (gradeName.contains("퍼스트")) return 171500;
+        if (gradeName.contains("우등")) return 85000;
+        return 65000;
     }
 }
