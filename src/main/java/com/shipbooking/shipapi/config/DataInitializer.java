@@ -7,11 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
- * [샘플 데이터 자동 생성기]
- * 서버 구동 시 선사, 선박, 좌석등급, 운항일정, 잔여좌석 초기 데이터를 자동으로 시딩합니다.
+ * [KSA DB 데이터 시딩 자동 초기화 객체]
+ * KSA_DATABASE (01_schema.sql & 02_seed_data.sql)의 모든 선사, 선박, 좌석등급,
+ * 2026년 8월 전 기간 운항일정 및 회원/동행자 데이터를 자동으로 DB에 초기화합니다.
  */
 @Slf4j
 @Component
@@ -29,74 +32,139 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (companyRepository.count() > 0) {
-            log.info("[DataInitializer] 초기 데이터가 이미 존재합니다.");
-            seedCompanionsIfEmpty();
+            log.info("[DataInitializer] DB 초기 데이터가 이미 활성화되어 있습니다.");
+            seedMembersAndCompanionsIfEmpty();
             return;
         }
 
-        log.info("[DataInitializer] 샘플 데이터 시딩 시작...");
+        log.info("[DataInitializer] KSA_DATABASE 스키마 및 시드 데이터 동기화 시작...");
 
-        // 1. 선사 생성
-        Company company1 = companyRepository.save(Company.builder().name("대저해운").tel("1899-8114").build());
-        Company company2 = companyRepository.save(Company.builder().name("씨스포빌").tel("1577-8665").build());
+        // =========================================
+        // 1. 선사 데이터 (shipping_companies)
+        // =========================================
+        Company companySeaspovill = companyRepository.save(Company.builder().name("씨스포빌").tel("1577-8665").build());
+        Company companyDaezer = companyRepository.save(Company.builder().name("대저해운").tel("1899-8114").build());
 
-        // 2. 선박 생성
-        Ship ship1 = shipRepository.save(Ship.builder().company(company1).name("썬플라워호").capacity(440).build());
-        Ship ship2 = shipRepository.save(Ship.builder().company(company2).name("씨스타5호").capacity(350).build());
+        // =========================================
+        // 2. 선박 데이터 (ships)
+        // =========================================
+        Ship shipSeastar1 = shipRepository.save(Ship.builder().company(companySeaspovill).name("씨스타1호").capacity(442).build());
+        Ship shipEldorado = shipRepository.save(Ship.builder().company(companyDaezer).name("엘도라도 익스프레스호").capacity(970).build());
 
-        // 3. 좌석 등급 생성 (썬플라워호)
-        SeatGrade gradeNormal1 = seatGradeRepository.save(SeatGrade.builder().ship(ship1).gradeName("일반실").basePrice(64500).build());
-        SeatGrade gradeSuperior1 = seatGradeRepository.save(SeatGrade.builder().ship(ship1).gradeName("우등실").basePrice(70700).build());
-        SeatGrade gradeVip1 = seatGradeRepository.save(SeatGrade.builder().ship(ship1).gradeName("VIP실").basePrice(120000).build());
+        // =========================================
+        // 3. 선박별 좌석등급 (ship_seat_classes)
+        // =========================================
+        // 씨스타1호: 1층 (300석, 65,500원), 2층 (142석, 82,500원)
+        SeatGrade seastar1F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("1층").seatCapacity(300).classOrder(2).basePrice(65500).build());
+        SeatGrade seastar2F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("2층").seatCapacity(142).classOrder(1).basePrice(82500).build());
 
-        // 좌석 등급 생성 (씨스타5호)
-        SeatGrade gradeNormal2 = seatGradeRepository.save(SeatGrade.builder().ship(ship2).gradeName("일반실").basePrice(60000).build());
-        SeatGrade gradeSuperior2 = seatGradeRepository.save(SeatGrade.builder().ship(ship2).gradeName("우등실").basePrice(66000).build());
+        // 엘도라도 익스프레스호: 이코노미 (700석, 81,000원), 비즈니스 (200석, 121,500원), 퍼스트 (70석, 171,500원)
+        SeatGrade eldoradoEco = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("이코노미").seatCapacity(700).classOrder(3).basePrice(81000).build());
+        SeatGrade eldoradoBiz = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("비즈니스").seatCapacity(200).classOrder(2).basePrice(121500).build());
+        SeatGrade eldoradoFst = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("퍼스트").seatCapacity(70).classOrder(1).basePrice(171500).build());
 
-        // 4. 운항 일정 생성 (포항, 묵호, 강릉 ↔ 울릉도 도동/저동/사동)
-        LocalDateTime now = LocalDateTime.now();
-        int[] dayOffsets = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+        // =========================================
+        // 4. 운항일정 (sailing_schedules & schedule_seats)
+        // 2026년 8월 6일 ~ 8월 31일 전 기간 생성
+        // =========================================
+        for (int day = 6; day <= 31; day++) {
+            LocalDate sailingDate = LocalDate.of(2026, 8, day);
 
-        for (int offset : dayOffsets) {
-            // 포항 -> 울릉도(저동)
-            Schedule p1 = scheduleRepository.save(Schedule.builder()
-                    .ship(ship1)
+            // [씨스타1호 - 묵호 ↔ 도동항]
+            Schedule s1 = scheduleRepository.save(Schedule.builder()
+                    .ship(shipSeastar1)
+                    .departurePort("묵호")
+                    .arrivalPort("도동항")
+                    .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(8, 20)))
+                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(11, 0)))
+                    .status(Schedule.ScheduleStatus.SCHEDULED)
+                    .build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar1F).totalSeats(300).availableSeats(280).price(65500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar2F).totalSeats(142).availableSeats(130).price(82500).build());
+
+            Schedule s2 = scheduleRepository.save(Schedule.builder()
+                    .ship(shipSeastar1)
+                    .departurePort("도동항")
+                    .arrivalPort("묵호")
+                    .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(17, 10)))
+                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(19, 50)))
+                    .status(Schedule.ScheduleStatus.SCHEDULED)
+                    .build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar1F).totalSeats(300).availableSeats(270).price(65500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar2F).totalSeats(142).availableSeats(120).price(82500).build());
+
+            // [씨스타1호 - 도동항 ↔ 독도] (짝수 일자 추가)
+            if (day % 2 == 0) {
+                Schedule sDokdo = scheduleRepository.save(Schedule.builder()
+                        .ship(shipSeastar1)
+                        .departurePort("도동항")
+                        .arrivalPort("독도")
+                        .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(12, 30)))
+                        .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(16, 30)))
+                        .status(Schedule.ScheduleStatus.SCHEDULED)
+                        .build());
+                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(250).price(65500).build());
+            }
+
+            // [엘도라도 익스프레스호 - 포항 ↔ 도동항]
+            Schedule e1 = scheduleRepository.save(Schedule.builder()
+                    .ship(shipEldorado)
                     .departurePort("포항")
-                    .arrivalPort("울릉도(저동)")
-                    .departureTime(now.plusDays(offset).withHour(9).withMinute(50).withSecond(0))
-                    .arrivalTime(now.plusDays(offset).withHour(13).withMinute(20).withSecond(0))
+                    .arrivalPort("도동항")
+                    .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(9, 50)))
+                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(12, 50)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(p1).seatGrade(gradeNormal1).totalSeats(300).availableSeats(280).price(64500).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(p1).seatGrade(gradeSuperior1).totalSeats(120).availableSeats(110).price(70700).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoEco).totalSeats(700).availableSeats(650).price(81000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(180).price(121500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoFst).totalSeats(70).availableSeats(60).price(171500).build());
 
-            // 묵호 -> 울릉도(도동)
-            Schedule m1 = scheduleRepository.save(Schedule.builder()
-                    .ship(ship2)
-                    .departurePort("묵호")
-                    .arrivalPort("울릉도(도동)")
-                    .departureTime(now.plusDays(offset).withHour(8).withMinute(20).withSecond(0))
-                    .arrivalTime(now.plusDays(offset).withHour(11).withMinute(20).withSecond(0))
+            Schedule e2 = scheduleRepository.save(Schedule.builder()
+                    .ship(shipEldorado)
+                    .departurePort("도동항")
+                    .arrivalPort("포항")
+                    .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(14, 20)))
+                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(17, 20)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m1).seatGrade(gradeNormal2).totalSeats(250).availableSeats(240).price(60000).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m1).seatGrade(gradeSuperior2).totalSeats(100).availableSeats(90).price(66000).build());
-
-            // 묵호 -> 울릉도(사동)
-            Schedule m2 = scheduleRepository.save(Schedule.builder()
-                    .ship(ship2)
-                    .departurePort("묵호")
-                    .arrivalPort("울릉도(사동)")
-                    .departureTime(now.plusDays(offset).withHour(12).withMinute(40).withSecond(0))
-                    .arrivalTime(now.plusDays(offset).withHour(15).withMinute(40).withSecond(0))
-                    .status(Schedule.ScheduleStatus.SCHEDULED)
-                    .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(m2).seatGrade(gradeNormal2).totalSeats(250).availableSeats(230).price(60000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoEco).totalSeats(700).availableSeats(640).price(81000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(175).price(121500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoFst).totalSeats(70).availableSeats(55).price(171500).build());
         }
 
-        // 6. 관리자 계정 생성 (전화번호: 01000000000, 비번: admin123)
+        seedMembersAndCompanionsIfEmpty();
+
+        log.info("[DataInitializer] KSA_DATABASE 모든 초기 데이터 100% 동기화 완료!");
+    }
+
+    private void seedMembersAndCompanionsIfEmpty() {
+        if (!userRepository.existsByPhone("01012341234")) {
+            userRepository.save(User.builder()
+                    .loginId("01012341234")
+                    .phone("01012341234")
+                    .password("1234")
+                    .name("정현영")
+                    .birthDate("2000-01-01")
+                    .gender("여성")
+                    .nationality("대한민국")
+                    .build());
+        }
+
+        if (!userRepository.existsByPhone("12345")) {
+            userRepository.save(User.builder()
+                    .loginId("12345")
+                    .phone("12345")
+                    .password("12345")
+                    .name("테스트12345")
+                    .birthDate("2000-01-01")
+                    .gender("남성")
+                    .nationality("대한민국")
+                    .build());
+        }
+
         if (!userRepository.existsByPhone("01000000000")) {
             userRepository.save(User.builder()
+                    .loginId("01000000000")
                     .phone("01000000000")
                     .password("admin123")
                     .name("관리자")
@@ -105,15 +173,9 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
         }
 
-        seedCompanionsIfEmpty();
-
-        log.info("[DataInitializer] 샘플 데이터 시딩 완료!");
-    }
-
-    private void seedCompanionsIfEmpty() {
         if (companionRepository.count() == 0) {
             companionRepository.save(Companion.builder()
-                    .memberId(3L)
+                    .memberId(1L)
                     .companionName("김철수")
                     .birthDate(java.time.LocalDate.of(1998, 5, 20))
                     .gender(Companion.Gender.MALE)
@@ -123,7 +185,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             companionRepository.save(Companion.builder()
-                    .memberId(3L)
+                    .memberId(1L)
                     .companionName("박영희")
                     .birthDate(java.time.LocalDate.of(2000, 11, 3))
                     .gender(Companion.Gender.FEMALE)
@@ -131,18 +193,6 @@ public class DataInitializer implements CommandLineRunner {
                     .phoneNumber("010-1111-2222")
                     .emergencyContact("010-3333-4444")
                     .build());
-
-            companionRepository.save(Companion.builder()
-                    .memberId(5L)
-                    .companionName("John Smith")
-                    .birthDate(java.time.LocalDate.of(1995, 8, 10))
-                    .gender(Companion.Gender.MALE)
-                    .nationality("USA")
-                    .phoneNumber("+1-555-1234")
-                    .emergencyContact("+1-555-9999")
-                    .build());
-
-            log.info("[DataInitializer] 샘플 동행자 데이터 3건 생성 완료!");
         }
     }
 }
