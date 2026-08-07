@@ -61,23 +61,26 @@ public class UserService {
      * 2. 비밀번호가 일치하는지 비교 검증
      * 3. 로그인 성공 시 회원 정보를 응답 데이터로 변환 후 반환
      */
-    @Transactional(readOnly = true) // 읽기 전용 트랜잭션 (성능 최적화)
+    @Transactional(readOnly = true)
     public UserDto.Response login(UserDto.LoginRequest request) {
-        // [1단계: 입력한 전화번호로 DB 회원 조회] 없으면 예외 발생
-        User user = userRepository.findByPhone(request.getPhone())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 전화번호(ID)입니다: " + request.getPhone()));
+        String cleanPhone = request.getPhone() != null ? request.getPhone().trim() : "";
+        String noHyphenPhone = cleanPhone.replaceAll("-", "");
 
-        // [2단계: 탈퇴 여부 확인]
+        User user = userRepository.findByPhone(cleanPhone)
+                .or(() -> userRepository.findByPhone(noHyphenPhone))
+                .or(() -> userRepository.findAll().stream()
+                        .filter(u -> u.getPhone() != null && u.getPhone().replaceAll("-", "").equals(noHyphenPhone))
+                        .findFirst())
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 아이디(휴대폰번호)입니다: " + request.getPhone()));
+
         if (user.isDeleted()) {
             throw new IllegalArgumentException("이미 탈퇴한 회원입니다.");
         }
 
-        // [3단계: 비밀번호 일치 여부 검증]
         if (!user.getPassword().equals(request.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // [4단계: 로그인 성공 로그 출력 및 결과 반환]
         log.info("[로그인 성공] 전화번호(ID)={}, 이름={}", user.getPhone(), user.getName());
         return convertToResponse(user);
     }
