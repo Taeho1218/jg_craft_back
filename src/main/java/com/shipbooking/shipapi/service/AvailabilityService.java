@@ -168,22 +168,18 @@ public class AvailabilityService {
                 }).collect(Collectors.toList());
                 totalAvailableSeats = seatInfos.stream().mapToInt(AvailabilityDto.SeatInfo::getAvailableSeats).sum();
             } else {
-                AvailabilityDto.SeatInfo defaultNormal = AvailabilityDto.SeatInfo.builder()
-                        .seatGradeId(1L)
-                        .gradeName("일반석")
-                        .price(65000)
-                        .availableSeats(200)
-                        .totalSeats(300)
-                        .build();
-                AvailabilityDto.SeatInfo defaultVip = AvailabilityDto.SeatInfo.builder()
-                        .seatGradeId(2L)
-                        .gradeName("우등석")
-                        .price(85000)
-                        .availableSeats(50)
-                        .totalSeats(100)
-                        .build();
-                seatInfos = List.of(defaultNormal, defaultVip);
-                totalAvailableSeats = 250;
+                if (shipId != null && shipId == 2L) {
+                    AvailabilityDto.SeatInfo eco = AvailabilityDto.SeatInfo.builder().seatGradeId(3L).gradeName("이코노미").price(81000).availableSeats(700).totalSeats(700).build();
+                    AvailabilityDto.SeatInfo biz = AvailabilityDto.SeatInfo.builder().seatGradeId(4L).gradeName("비즈니스").price(121500).availableSeats(200).totalSeats(200).build();
+                    AvailabilityDto.SeatInfo fst = AvailabilityDto.SeatInfo.builder().seatGradeId(5L).gradeName("퍼스트").price(171500).availableSeats(70).totalSeats(70).build();
+                    seatInfos = List.of(eco, biz, fst);
+                    totalAvailableSeats = 970;
+                } else {
+                    AvailabilityDto.SeatInfo f1 = AvailabilityDto.SeatInfo.builder().seatGradeId(1L).gradeName("1층").price(65500).availableSeats(300).totalSeats(300).build();
+                    AvailabilityDto.SeatInfo f2 = AvailabilityDto.SeatInfo.builder().seatGradeId(2L).gradeName("2층").price(82500).availableSeats(142).totalSeats(142).build();
+                    seatInfos = List.of(f1, f2);
+                    totalAvailableSeats = 442;
+                }
             }
         } else {
             seatInfos = seats.stream()
