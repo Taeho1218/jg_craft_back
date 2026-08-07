@@ -150,4 +150,10 @@ public class UserController {
         // HTTP 상태 코드 200(OK)과 함께 수정된 회원 정보 반환
         return ResponseEntity.ok(response);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.warn("[회원 API 예외 발생] {}", e.getMessage());
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }

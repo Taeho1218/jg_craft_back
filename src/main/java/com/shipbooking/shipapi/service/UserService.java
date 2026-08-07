@@ -29,15 +29,21 @@ public class UserService {
             throw new IllegalArgumentException("이미 등록된 전화번호(로그인 ID)입니다: " + request.getPhone());
         }
 
+        String email = (request.getEmail() != null && !request.getEmail().isBlank()) ? request.getEmail() : null;
+        String emergencyPhone = (request.getEmergencyPhone() != null && !request.getEmergencyPhone().isBlank()) ? request.getEmergencyPhone() : null;
+        if (emergencyPhone != null && emergencyPhone.equals(request.getPhone())) {
+            emergencyPhone = null;
+        }
+
         // [2단계: 프론트엔드가 보낸 데이터(request)를 DB 엔티티 객체로 변환]
         User user = User.builder()
                 .phone(request.getPhone())                 // 전화번호 (로그인 ID로 사용)
-                .email(request.getEmail())                 // 이메일
+                .email(email)                              // 이메일 (빈값이면 null)
                 .password(request.getPassword())           // 비밀번호
                 .name(request.getName())                   // 이름
                 .gender(request.getGender())               // 성별 (M / F)
                 .nationality(request.getNationality() != null ? request.getNationality() : "KOR") // 국적 (기본값: KOR)
-                .emergencyPhone(request.getEmergencyPhone()) // 비상 연락처
+                .emergencyPhone(emergencyPhone)            // 비상 연락처 (빈값이면 null)
                 .birthDate(request.getBirthDate())         // 생년월일 (YYYY-MM-DD)
                 .build();
 
