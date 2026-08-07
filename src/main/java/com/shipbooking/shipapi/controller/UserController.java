@@ -151,9 +151,9 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("[회원 API 예외 발생] {}", e.getMessage());
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        log.error("[회원 API 예외 발생]", e);
+        return ResponseEntity.badRequest().body(e.getMessage() != null ? e.getMessage() : "요청 처리 중 오류가 발생했습니다.");
     }
 }

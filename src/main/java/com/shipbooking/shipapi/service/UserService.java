@@ -80,7 +80,8 @@ public class UserService {
             throw new IllegalArgumentException("이미 탈퇴한 회원입니다.");
         }
 
-        if (!user.getPassword().equals(request.getPassword())) {
+        String userPw = (user.getPassword() != null) ? user.getPassword() : "";
+        if (!userPw.equals(request.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
