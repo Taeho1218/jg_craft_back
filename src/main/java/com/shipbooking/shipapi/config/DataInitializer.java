@@ -93,14 +93,20 @@ public class DataInitializer implements CommandLineRunner {
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar1F).totalSeats(300).availableSeats(270).price(65500).build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar2F).totalSeats(142).availableSeats(120).price(82500).build());
 
-            // [씨스타1호 - 도동항 ↔ 독도] (짝수 일자 추가)
-            if (day % 2 == 0) {
+            // [씨스타1호 - 도동항 ↔ 독도] (02_seed_data.sql 및 씨스포빌 운항일정과 동일한 날짜: 7,8,10,12,14,15,16,18,20,22,25,27,29일)
+            java.util.Set<Integer> dokdoDays = java.util.Set.of(7, 8, 10, 12, 14, 15, 16, 18, 20, 22, 25, 27, 29);
+            if (dokdoDays.contains(day)) {
+                LocalTime dokdoTime = LocalTime.of(12, 30);
+                if (day == 14) dokdoTime = LocalTime.of(15, 30);
+                else if (day == 15) dokdoTime = LocalTime.of(15, 0);
+                else if (day == 16) dokdoTime = LocalTime.of(5, 0);
+
                 Schedule sDokdo = scheduleRepository.save(Schedule.builder()
                         .ship(shipSeastar1)
                         .departurePort("도동항")
                         .arrivalPort("독도")
-                        .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(12, 30)))
-                        .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(16, 30)))
+                        .departureTime(LocalDateTime.of(sailingDate, dokdoTime))
+                        .arrivalTime(LocalDateTime.of(sailingDate, dokdoTime.plusHours(3)))
                         .status(Schedule.ScheduleStatus.SCHEDULED)
                         .build());
                 scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(250).price(65500).build());
