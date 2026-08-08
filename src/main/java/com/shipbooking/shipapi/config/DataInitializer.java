@@ -70,13 +70,13 @@ public class DataInitializer implements CommandLineRunner {
         for (int day = 6; day <= 31; day++) {
             LocalDate sailingDate = LocalDate.of(2026, 8, day);
 
-            // [씨스타1호 - 묵호 ↔ 도동항]
+            // [씨스타1호 - 묵호 ↔ 도동항] (160분 = 2시간 40분 소요)
             Schedule s1 = scheduleRepository.save(Schedule.builder()
                     .ship(shipSeastar1)
                     .departurePort("묵호")
                     .arrivalPort("도동항")
                     .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(8, 20)))
-                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(11, 0)))
+                    .estimatedDurationMinutes(160)
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
@@ -87,13 +87,13 @@ public class DataInitializer implements CommandLineRunner {
                     .departurePort("도동항")
                     .arrivalPort("묵호")
                     .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(17, 10)))
-                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(19, 50)))
+                    .estimatedDurationMinutes(160)
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar2F).totalSeats(142).availableSeats(142).price(60000).build());
 
-            // [씨스타1호 - 도동항 ↔ 독도] (02_seed_data.sql 및 씨스포빌 운항일정과 동일한 날짜: 7,8,10,12,14,15,16,18,20,22,25,27,29일)
+            // [씨스타1호 - 도동항 ↔ 독도] (240분 = 4시간 소요, 02_seed_data.sql 및 씨스포빌 운항일정과 동일한 날짜)
             java.util.Set<Integer> dokdoDays = java.util.Set.of(7, 8, 10, 12, 14, 15, 16, 18, 20, 22, 25, 27, 29);
             if (dokdoDays.contains(day)) {
                 LocalTime dokdoTime = LocalTime.of(12, 30);
@@ -106,20 +106,20 @@ public class DataInitializer implements CommandLineRunner {
                         .departurePort("도동항")
                         .arrivalPort("독도")
                         .departureTime(LocalDateTime.of(sailingDate, dokdoTime))
-                        .arrivalTime(LocalDateTime.of(sailingDate, dokdoTime.plusHours(3)))
+                        .estimatedDurationMinutes(240)
                         .status(Schedule.ScheduleStatus.SCHEDULED)
                         .build());
                 scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
                 scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar2F).totalSeats(142).availableSeats(142).price(60000).build());
             }
 
-            // [엘도라도 익스프레스호 - 포항 ↔ 도동항]
+            // [엘도라도 익스프레스호 - 포항 ↔ 도동항] (180분 = 3시간 소요)
             Schedule e1 = scheduleRepository.save(Schedule.builder()
                     .ship(shipEldorado)
                     .departurePort("포항")
                     .arrivalPort("도동항")
                     .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(9, 50)))
-                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(12, 50)))
+                    .estimatedDurationMinutes(180)
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoEco).totalSeats(700).availableSeats(700).price(86000).build());
@@ -131,7 +131,7 @@ public class DataInitializer implements CommandLineRunner {
                     .departurePort("도동항")
                     .arrivalPort("포항")
                     .departureTime(LocalDateTime.of(sailingDate, LocalTime.of(14, 20)))
-                    .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(17, 20)))
+                    .estimatedDurationMinutes(180)
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
             scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoEco).totalSeats(700).availableSeats(700).price(86000).build());
