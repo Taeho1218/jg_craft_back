@@ -54,14 +54,14 @@ public class DataInitializer implements CommandLineRunner {
         // =========================================
         // 3. 선박별 좌석등급 (ship_seat_classes)
         // =========================================
-        // 씨스타1호: 1층 (300석, 65,500원), 2층 (142석, 82,500원)
-        SeatGrade seastar1F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("1층").seatCapacity(300).classOrder(2).basePrice(65500).build());
-        SeatGrade seastar2F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("2층").seatCapacity(142).classOrder(1).basePrice(82500).build());
+        // 씨스타1호: 1층 (300석, 60,000원), 2층 (150석, 60,000원)
+        SeatGrade seastar1F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("1층").seatCapacity(300).classOrder(1).basePrice(60000).build());
+        SeatGrade seastar2F = seatGradeRepository.save(SeatGrade.builder().ship(shipSeastar1).gradeName("2층").seatCapacity(150).classOrder(2).basePrice(60000).build());
 
-        // 엘도라도 익스프레스호: 이코노미 (700석, 81,000원), 비즈니스 (200석, 121,500원), 퍼스트 (70석, 171,500원)
-        SeatGrade eldoradoEco = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("이코노미").seatCapacity(700).classOrder(3).basePrice(81000).build());
-        SeatGrade eldoradoBiz = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("비즈니스").seatCapacity(200).classOrder(2).basePrice(121500).build());
-        SeatGrade eldoradoFst = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("퍼스트").seatCapacity(70).classOrder(1).basePrice(171500).build());
+        // 엘도라도 익스프레스호: 이코노미 (700석, 86,000원), 비즈니스 (200석, 120,000원), 퍼스트 (50석, 170,000원)
+        SeatGrade eldoradoEco = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("이코노미").seatCapacity(700).classOrder(1).basePrice(86000).build());
+        SeatGrade eldoradoBiz = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("비즈니스").seatCapacity(200).classOrder(2).basePrice(120000).build());
+        SeatGrade eldoradoFst = seatGradeRepository.save(SeatGrade.builder().ship(shipEldorado).gradeName("퍼스트").seatCapacity(50).classOrder(3).basePrice(170000).build());
 
         // =========================================
         // 4. 운항일정 (sailing_schedules & schedule_seats)
@@ -79,8 +79,8 @@ public class DataInitializer implements CommandLineRunner {
                     .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(11, 0)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar1F).totalSeats(300).availableSeats(280).price(65500).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar2F).totalSeats(142).availableSeats(130).price(82500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s1).seatGrade(seastar2F).totalSeats(150).availableSeats(150).price(60000).build());
 
             Schedule s2 = scheduleRepository.save(Schedule.builder()
                     .ship(shipSeastar1)
@@ -90,8 +90,8 @@ public class DataInitializer implements CommandLineRunner {
                     .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(19, 50)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar1F).totalSeats(300).availableSeats(270).price(65500).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar2F).totalSeats(142).availableSeats(120).price(82500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(s2).seatGrade(seastar2F).totalSeats(150).availableSeats(150).price(60000).build());
 
             // [씨스타1호 - 도동항 ↔ 독도] (02_seed_data.sql 및 씨스포빌 운항일정과 동일한 날짜: 7,8,10,12,14,15,16,18,20,22,25,27,29일)
             java.util.Set<Integer> dokdoDays = java.util.Set.of(7, 8, 10, 12, 14, 15, 16, 18, 20, 22, 25, 27, 29);
@@ -109,8 +109,8 @@ public class DataInitializer implements CommandLineRunner {
                         .arrivalTime(LocalDateTime.of(sailingDate, dokdoTime.plusHours(3)))
                         .status(Schedule.ScheduleStatus.SCHEDULED)
                         .build());
-                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(280).price(65500).build());
-                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar2F).totalSeats(142).availableSeats(130).price(82500).build());
+                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(300).price(60000).build());
+                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar2F).totalSeats(150).availableSeats(150).price(60000).build());
             }
 
             // [엘도라도 익스프레스호 - 포항 ↔ 도동항]
@@ -122,9 +122,9 @@ public class DataInitializer implements CommandLineRunner {
                     .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(12, 50)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoEco).totalSeats(700).availableSeats(650).price(81000).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(180).price(121500).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoFst).totalSeats(70).availableSeats(60).price(171500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoEco).totalSeats(700).availableSeats(700).price(86000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(200).price(120000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e1).seatGrade(eldoradoFst).totalSeats(50).availableSeats(50).price(170000).build());
 
             Schedule e2 = scheduleRepository.save(Schedule.builder()
                     .ship(shipEldorado)
@@ -134,9 +134,9 @@ public class DataInitializer implements CommandLineRunner {
                     .arrivalTime(LocalDateTime.of(sailingDate, LocalTime.of(17, 20)))
                     .status(Schedule.ScheduleStatus.SCHEDULED)
                     .build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoEco).totalSeats(700).availableSeats(640).price(81000).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(175).price(121500).build());
-            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoFst).totalSeats(70).availableSeats(55).price(171500).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoEco).totalSeats(700).availableSeats(700).price(86000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoBiz).totalSeats(200).availableSeats(200).price(120000).build());
+            scheduleSeatRepository.save(ScheduleSeat.builder().schedule(e2).seatGrade(eldoradoFst).totalSeats(50).availableSeats(50).price(170000).build());
         }
 
         seedMembersAndCompanionsIfEmpty();
