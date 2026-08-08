@@ -109,7 +109,8 @@ public class DataInitializer implements CommandLineRunner {
                         .arrivalTime(LocalDateTime.of(sailingDate, dokdoTime.plusHours(3)))
                         .status(Schedule.ScheduleStatus.SCHEDULED)
                         .build());
-                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(250).price(65500).build());
+                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar1F).totalSeats(300).availableSeats(280).price(65500).build());
+                scheduleSeatRepository.save(ScheduleSeat.builder().schedule(sDokdo).seatGrade(seastar2F).totalSeats(142).availableSeats(130).price(82500).build());
             }
 
             // [엘도라도 익스프레스호 - 포항 ↔ 도동항]
